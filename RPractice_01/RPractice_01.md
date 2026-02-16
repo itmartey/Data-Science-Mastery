@@ -1,6 +1,6 @@
-# A Data Science Mastery Project
+# The First R project 
 ----
-This project represents my first overview and studies into the R ecosystem. It focuses on performing Exploratory Data Analysis (EDA) on the Sierra Leone Ebola dataset. 
+This project represents my first overview and studies into the R ecosystem. It focuses on performing Exploratory Data Analysis (EDA) on the Sierra Leone Ebola dataset from the [thegraphcourse.org]
 The goal was to transform raw epidemiological data into a structured, reproducible report that identifies key demographic and geographical trends.
 
 ## METHODS EMPLOYED 
@@ -16,6 +16,14 @@ The goal was to transform raw epidemiological data into a structured, reproducib
 **Language:** R
 
 **Environment:** RStudio / R Markdown
+
+## Repository Structure
+
+RPractice_01.Rmd: The source code containing all R logic and documentation used for the ebola analysis 
+
+RPractice_01.html: The final rendered report. Download raw file (Viewable via web browser).
+
+ebola_sierra_leone.csv Exported summary data 
 
 **Key Packages:** tidyverse (Data manipulation), janitor (Cleaning & Tabulation), pander (Reporting).
 
