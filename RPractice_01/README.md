@@ -1,6 +1,6 @@
 # The First R project 
 ----
-This project represents my first overview and studies into the R ecosystem. It focuses on performing Exploratory Data Analysis (EDA) on the Sierra Leone Ebola dataset from the [thegraphcourse.org]
+This project represents my first overview and studies into the R ecosystem. It focuses on performing Exploratory Data Analysis (EDA) on the Sierra Leone Ebola dataset from the tutorial materials on <https://thegraphcourses.org>
 The goal was to transform raw epidemiological data into a structured, reproducible report that identifies key demographic and geographical trends.
 
 ## METHODS EMPLOYED 
