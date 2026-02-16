@@ -1,0 +1,140 @@
+---
+title: "First R Practice: Ebola Sierra Leone Analysis (The Graph Courses)"
+author: "Isaac Tetteh Martey"
+date: "2026-02-16"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Analysis Setup: Packages and Environment
+
+Before running an analysis in R/RStudio, one must ensure the R environment is properly equipped with the necessary tools/packages.
+
+### Understanding R Packages
+
+An **R Package** is essentially an "app" for R. While base R is powerful, packages like `tidyverse` provide specialised tools for data cleaning and visualisation.
+
+To manage these efficiently, it is advised to use the `pacman` (Package Manager) library. I have used a conditional "if" statement to ensure the workflow is seamless:
+
+1.  **Detection**: It checks if `pacman` is installed.
+
+2.  **Installation**: If missing, it installs it automatically.
+
+3.  **Loading**: It then uses `p_load()` to check, install, and load all other required libraries in a single step.
+
+This is much more efficient than using the standard `library()` function multiple times.
+
+```{r load-packages, message=FALSE, warning=FALSE}
+# Load pacman to manage other packages ----
+if(!require(pacman)) install.packages("pacman")
+
+# Use p_load to ensure all libraries are installed and active
+pacman::p_load(
+  tidyverse, # Essential for data manipulation and ggplot2
+  inspectdf, # For column-wise data comparison
+  plotly,    # For interactive web-based charts
+  janitor,   # For cleaning column names and creating tables
+  visdat,    # For visualizing missing data patterns
+  esquisse   # For interactive drag-and-drop plot building
+)
+```
+
+# Data Acquisition
+
+For this analysis, I used the Sierra Leone Ebola dataset from 'The Graph Courses' on YouTube. I am importing the data directly from a remote GitHub repository to ensure the most up-to-date version is used and to maintain a fully reproducible workflow.
+
+```{r load-data, message=FALSE}
+# Importing the dataset from a remote URL
+ebola_sierra_leone <- read_csv("https://raw.githubusercontent.com/the-graph-courses/idar_book/refs/heads/main/data/ebola_sierra_leone.csv")
+# Standardizing column names (Optional but recommended)
+ebola_sierra_leone <- janitor::clean_names(ebola_sierra_leone)
+
+```
+
+# Exploring the data
+
+```{r data-preview}
+# Displaying the top 10 rows using pander for a professional look
+pander::pander(head(ebola_sierra_leone, n = 10),
+             caption = "First 10 Rows of the Ebola Sierra Leone Dataset")
+```
+
+# Data Structure and Dimensions
+
+Before diving into the analysis, I verified the integrity and scale of the dataset.
+
+The **ebola_sierra_leone** dataset contains information regarding Ebola cases in the districts of Sierra Leone Its structure can be summarized as follows:
+
+-Total Records: There are `r nrow(ebola_sierra_leone)` individual cases recorded.
+
+-Total Variables: There are `r ncol(ebola_sierra_leone)` different attributes (columns) for each case.
+
+-Column Names: The variables being tracked are: `r paste(colnames(ebola_sierra_leone), collapse = ", ")`
+
+# Univariate Analysis: Age Distribution
+
+```{r age-stats}
+
+# Calculating stats and saving them as variables for cleaner output
+
+age_mean <- mean(ebola_sierra_leone$age, na.rm = T) 
+
+age_median <- median(ebola_sierra_leone$age, na.rm = T)
+
+```
+
+The average age of patients in this dataset is **`r round(age_mean, 1)`** years, with a median age of **`r age_median`** years.
+
+**Technical Note:** The **na.rm = TRUE** argument was used to ensure that missing values (NAs) did not interfere with the calculation.
+
+# Visualising Age Distribution
+
+```{r age-histogram, message=FALSE, warning=FALSE}
+# A histogram allows us to see the "shape" of the outbreak's impact across different age groups.
+
+hist(ebola_sierra_leone$age, main = "Age Distribution", col = "blue")
+```
+
+# Answering a few questions with the data
+
+### **When was the first case reported ?**
+
+```{r first-case, eval=FALSE}
+min(ebola_sierra_leone$date_of_sample)
+
+```
+
+The first case was recorded on `r min(ebola_sierra_leone$date_of_sample)`. This was achieved by performing the **min()** function
+
+### **Had there been more cases in men or women ?**
+
+```{r ,echo=FALSE}
+ggplot(ebola_sierra_leone) +
+  aes(x = sex, fill = sex) +
+  geom_bar() +
+  scale_fill_hue(direction = 1) +
+  theme_minimal()
+```
+
+The graph above clearly depicts there have been more cases reported in women than men.
+
+
+---
+
+### Final Reflection
+
+This report marks my **first R practice** in my quest for **data science mastery**. While the code focuses on the Sierra Leone Ebola outbreak, the process represents my commitment to learning the tools, logic, and report essentials for data science. This analysis represents my first formal practice session in R Markdown. It serves as a foundational milestone in my journey toward data science mastery, demonstrating the transition from raw data manipulation to structured, reproducible reporting. 
+
+```{r session-info, echo=FALSE}
+# This is a professional touch for reproducibility
+sessionInfo()
+```
+
+----
+1 John 3:11
