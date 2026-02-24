@@ -164,8 +164,33 @@ WHERE streamed_on_spotify > streamed_on_youtube
 ```
 
 ### Advanced Level
-1. Find the top 3 most-viewed tracks for each artist using window functions.
-2. Write a query to find tracks where the liveness score is above the average.
+1. **Find the top 3 most-viewed tracks for each artist using window functions.**
+```sql
+WITH ranking_artist
+AS
+(SELECT 
+	artist,
+	track,
+	SUM(total_views) AS total,
+	DENSE_RANK() OVER (PARTITION BY artist ORDER BY SUM(total_views) DESC) AS ranking
+FROM spotify
+GROUP BY 1, 2
+ORDER BY 1, 3 DESC
+)
+SELECT * FROM ranking_artist
+WHERE ranking <= 3;
+```
+2. **Write a query to find tracks where the liveness score is above the average.**
+```sql
+SELECT 
+    track,
+    liveness,
+    ROUND(liveness::numeric, 3) AS liveness_rounded  -- optional: for nicer display
+FROM spotify
+WHERE liveness > (SELECT AVG(liveness) FROM spotify)
+ORDER BY liveness DESC; 
+
+```
 3. **Use a `WITH` clause to calculate the difference between the highest and lowest energy values for tracks in each album.**
 ```sql
 WITH cte
@@ -184,11 +209,22 @@ FROM cte
 ORDER BY 2 DESC
 ```
    
-5. Find tracks where the energy-to-liveness ratio is greater than 1.2.
-6. Calculate the cumulative sum of likes for tracks ordered by the number of views, using window functions.
+4. Find tracks where the energy-to-liveness ratio is greater than 1.2.
+```sql
+SELECT 
+    track,
+    artist,                 
+    energy,
+    liveness,
+    ROUND((energy / liveness)::numeric, 3) AS energy_to_liveness_ratio
+FROM spotify
+WHERE liveness > 0                     --  safety net to prevent division by zero
+  AND energy / liveness > 1.2
+ORDER BY energy_to_liveness_ratio DESC;                             
+```
 
 
-Here’s an updated section for your **Spotify Advanced SQL Project and Query Optimization** README, focusing on the query optimization task you performed. You can include the specific screenshots and graphs as described.
+Here’s an updated section for your **Spotify Advanced SQL Project and Query Optimization** README, focusing on the query optimization tasks.
 
 ---
 
