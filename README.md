@@ -9,3 +9,12 @@ Leveraging my background as a data analyst at the Right to Information (RTI) Com
 Teaching Mathematics to college and university students, I have gained a strong affinity for Mathematics and have gained an interest in contributing to research on how mathematics generally propels models in machine learning. I am purposefully looking to shift career into the academia. 
 
 **Open to Reasearch in MACHINE LEARNING, BIG DATA, ADVANCED MATHEMATICS**  📍 GHANA, ACCRA
+
+----
+Materials
+----
+- Mathematics for Machine Learning - Marc Peter Deiseroth, A. Aldo Faisal, Cheng Soon Ong
+- Introduction to Linear Algebra - Gilbert Strang
+- <https://thegraphcourse.com> for introductory, intermediate and advanced R.
+- Edureka for algorithms (logistic regression, linear regression, decision trees and random forest)
+- Learn Numpy in Weekend by Hisham El-Amir
