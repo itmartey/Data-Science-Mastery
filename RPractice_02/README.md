@@ -56,7 +56,6 @@ The main rendered output is available here:
 - janitor
 - gt
 - reactable
-- here (optional)
 - pacman (optional package manager)
 
 ## **License**
