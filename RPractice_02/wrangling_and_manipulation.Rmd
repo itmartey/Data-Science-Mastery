@@ -1,0 +1,482 @@
+---
+title: "Data Wrangling and Manipulation"
+subtitle: "Health Dataset Example – The Graph Courses"
+author: "Isaac Tetteh Martey"
+date: "March 2, 2026"
+output:
+  prettydoc::html_pretty:
+    theme: cosmo
+    highlight: github
+    fig_caption: true
+    df_print: paged         # nice interactive tables for data frames
+---
+
+```{r setup, include = FALSE}
+
+# Global defaults — hide code + clean output for portfolio style
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align  = "center",
+  out.width  = "80%",
+  fig.asp    = 0.618,
+  dpi     = 140
+)
+
+# Load packages once, quietly, in setup chunk
+if (!requireNamespace("pacman", quietly = TRUE)) {
+  install.packages("pacman")
+}
+pacman::p_load(
+  tidyverse,     # ggplot2, dplyr, readr, tidyr, etc.
+  janitor,       # clean_names(), etc.
+  gt,            # beautiful tables (better than kable for HTML)
+  reactable,     # interactive tables — great for portfolio
+  here           # optional — use if you switch to local files later
+)
+```
+
+# Data Wrangling
+
+This document entails initial data ingestion, cleaning, and structural transformation of the some health dataset from the <https://www.thegraphcourses.org>
+
+The direct link from the github account of **thegraphcourses** were used so as to get the most updated clean dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+yaounde_covid <- read_csv("https://raw.githubusercontent.com/the-graph-courses/idar_book/refs/heads/main/data/yaounde_data2.csv", show_col_types = FALSE) %>% clean_names()
+
+```
+
+```{r echo=TRUE, message =FALSE, warning=FALSE}
+sacro_data <- read_csv("https://raw.githubusercontent.com/the-graph-courses/idar_book/refs/heads/main/data/sarcopenia_elderly.csv" , show_col_types = FALSE) %>% clean_names() 
+```
+
+```{r echo=TRUE, message =FALSE, warning=FALSE}
+influenza <- read_csv("https://raw.githubusercontent.com/the-graph-courses/idar_book/refs/heads/main/data/flu_h7n9_china_2013.csv")
+```
+
+## Focusing on User Information for the Yaounde Dataset
+
+The Yaoundé COVID-19 dataset contains 37 variables (demographics, symptoms, serology, behaviors, etc.).
+
+For the initial exploration and most of the analysis in this portfolio, we focus on the **core participant characteristics** — from `age` to `occupation`.
+
+This reduces the working dataset from 37 columns to a more manageable subset.
+
+```{r}
+# Select relevant demographic / user-info columns
+yao <- yaounde_covid %>% 
+  select(age:occupation)
+
+yao %>% 
+  slice_sample(n = 10) %>%           # random sample looks more natural than head()
+  gt::gt() %>% 
+  tab_header(
+    title = "Sample of Core Participant Information",
+    subtitle = "Yaoundé COVID-19 dataset – selected variables (random 10 rows)"
+  ) %>% 
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  )
+```
+
+In the table above only 5 columns were selected using the **select(age:occupation)** but in the table below the **select(!c(highest_education:consultation))** was used to select all other columns than the ones in the concatenate function as th **!** represents NOT.
+
+```{r}
+yaounde_covid %>% 
+  select(!c(highest_education:consultation)) %>% 
+  slice_sample(n = 10) %>%           # random sample looks more natural than head()
+  gt::gt() %>% 
+  tab_header(
+    title = "Sample of Core Participant Information",
+  ) %>% 
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  )
+
+```
+
+## Selecting Binary / Indicator Variables
+
+Many variables in the Yaoundé COVID-19 dataset are binary indicators (yes/no questions) whose columns start with `is_`. These typically represent:
+
+-   Presence of symptoms (e.g. **is_fever** , **is_cough**)
+-   Behaviors or exposures (e.g. **is_smoker**, **is_pregnant**)
+
+I extract the participant **id** along with all the **is\_** columns to focus on this group of variables for later analysis (e.g. prevalence of symptoms, treatment patterns).
+
+```{r}
+yaounde_covid %>% 
+  select(id, starts_with("is_")) %>% 
+reactable(
+  defaultPageSize = 12,
+  striped = TRUE,
+  highlight = TRUE,
+  compact = TRUE,
+  bordered = TRUE,
+  columns = list(
+    id = colDef(name = "Participant ID", minWidth = 110)
+  ),
+  defaultColDef = colDef(minWidth = 95, align = "center")
+)
+```
+
+
+## Reordering Columns: Bringing Outcome Variables First
+```{r echo=TRUE, eval=FALSE}
+yaounde_covid %>% 
+  select(ends_with("result"), everything()) 
+```
+- It reorders the columns so that:
+
+- All columns whose names end with "result" come first (likely test/serology outcomes like igg_result, igm_result, etc.)
+Then all the other columns follow in their original order
+
+```{r}
+yaounde_covid %>% 
+  select(ends_with("result"), everything()) %>%
+  select(1:8) %>%                         # show only first 8 columns (the important ones + a few others)
+  slice_sample(n = 10) %>%                # random sample – more representative
+  gt::gt() %>%
+  tab_header(
+    title = "Reordered Dataset Preview",
+    subtitle = "Outcome/result columns moved to the front (random 10 participants)"
+  ) %>%
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  )
+```
+
+## Subsetting by Sex – Focusing on Male Participants
+
+To explore potential sex-based differences (common in COVID-19 research — e.g. severity, symptoms), we filtered only male participants from the core user information dataset **yao**.
+
+```{r}
+yao %>% 
+  filter(sex == "Male") %>%
+  slice_sample(n = 12) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Random Sample of Male Participants",
+    subtitle = "Males in the Yaoundé COVID-19 dataset"
+  ) %>%
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  )
+```
+
+## Neighborhood Subsetting – Excluding / Focusing on Specific Areas
+
+The Yaoundé dataset includes a **neighborhood** variable representing participants' residential areas.  
+
+Two common analysis patterns are:
+
+- **Excluding** certain neighborhoods 
+- **Focusing only on** specific neighborhoods (e.g. to compare Tsinga and Messa against the rest of the sample)
+
+I demonstrate both approaches below using the core dataset **yaounde_covid**.
+
+```{r}
+yaounde_covid %>% 
+  filter(!(neighborhood %in% c("Tsinga", "Messa"))) %>% 
+  count(neighborhood, name = "n_participants") %>%
+  arrange(desc(n_participants)) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Most Common Neighborhoods (Excluding Tsinga and Messa)",
+  ) %>%
+  tab_options(table.font.size = px(13)) %>%
+  cols_label(
+    neighborhood   = "Neighborhood",
+    n_participants = "Number of Participants"
+  ) %>% 
+  tab_style(
+  style = cell_text(weight = "bold"),
+  locations = cells_column_labels()
+)
+```
+
+
+```{r}
+yaounde_covid %>% 
+  filter(neighborhood %in% c("Tsinga", "Messa")) %>%
+  count(neighborhood, name = "n_participants") %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Participants from Tsinga and Messa Only",
+  ) %>%
+  tab_options(table.font.size = px(13)) %>%
+  cols_label(
+    neighborhood   = "Neighborhood",
+    n_participants = "Number of Participants"
+  ) %>%
+  fmt_number(columns = n_participants, decimals = 0) %>% 
+  tab_style(
+  style = cell_text(weight = "bold"),
+  locations = cells_column_labels()
+)
+```
+
+## Handling Missing Values in Key Variables – Pregnancy Status
+
+The variable `is_pregnant` is a binary indicator that is only relevant/applicable for female participants.  
+
+Many datasets record pregnancy status as `NA` for males, children, or when the question was skipped/not applicable.  
+
+I create a subset that keeps only rows where pregnancy status is explicitly recorded (i.e. non-missing), which is useful before any pregnancy-related analysis.
+
+
+```{r filter-known-pregnancy}
+# Keep only rows where is_pregnant is not missing
+known_pregnancy <- yaounde_covid %>%
+  filter(!is.na(is_pregnant))
+
+# Quick summary table – shows what we kept
+known_pregnancy %>%
+  count(is_pregnant, name = "n_participants") %>%
+  mutate(
+    percent     = round(n_participants / nrow(known_pregnancy) * 100, 1),
+status = case_when(
+    is_pregnant %in% c("Yes", "yes") ~ "Pregnant",
+    is_pregnant %in% c("No",  "no") ~ "Not pregnant",
+    TRUE ~ "Other / Invalid"
+  )
+) %>% 
+  select(status, n_participants, percent) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Pregnancy Status – Among Participants with Known Status",
+    subtitle = paste("n =", nrow(known_pregnancy), "participants with non-missing is_pregnant")
+  ) %>%
+  tab_options(table.font.size = px(13)) %>%
+  cols_label(
+    status         = "Pregnancy Status",
+    n_participants = "Number of Participants",
+    percent        = "Percentage"
+  ) %>%
+  fmt_number(columns = c(n_participants, percent), decimals = 1) %>%
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) 
+```
+
+## Creating Derived Variables – Symptom Status Flag
+
+I create a clean binary flag `has_no_symptoms` (TRUE/FALSE) to identify participants who reported having **no symptoms** at all.  
+
+```{r has-no-symptoms-flag}
+# Create the binary flag
+yao_symptoms <- yaounde_covid %>%
+  mutate(
+    has_no_symptoms = symptoms == "No symptoms"
+  ) %>%
+  select(symptoms, has_no_symptoms)
+
+# Interactive preview with reactable – portfolio-friendly
+reactable(
+  yao_symptoms,
+  defaultPageSize = 10,
+  striped = TRUE,
+  highlight = TRUE,
+  compact = TRUE,
+  bordered = TRUE,
+  showPagination = TRUE,            # this is key
+  searchable = TRUE,                    # allows quick filtering/search in browser
+  columns = list(
+    symptoms = colDef(
+      name = "Reported Symptoms",
+      minWidth = 220
+    ),
+    has_no_symptoms = colDef(
+      name = "No Symptoms?",
+      align = "center"
+    )
+))
+```
+
+## Sarcopenia Dataset – Creating Grip Strength Indicator
+
+In the sarcopenia dataset for elderly participants, grip strength is a key diagnostic criterion.  
+
+Low grip strength is often defined with sex-specific cut-offs, but for illustration here we use a simple threshold of < 20 (common approximate value for identifying weakness in older adults, though clinical cut-offs vary by guideline and population).
+
+We create a binary flag `low_grip_strength` (TRUE = grip strength < 20) to support later analysis (e.g. prevalence of low grip strength, association with other variables).
+
+```{r grip-strength-flag}
+# Create the binary indicator
+sacro_grip <- sacro_data %>%
+  select(grip_strength_kg) %>%
+  mutate(
+    low_grip_strength = grip_strength_kg < 20
+  )
+
+# Summary table – shows distribution of the new flag
+sacro_grip %>%
+  count(low_grip_strength) %>%
+  mutate(
+    status  = if_else(low_grip_strength, "Low grip strength (< 20)", "Normal / Higher grip strength"),
+    percent = round(n / sum(n) * 100, 1)
+  ) %>%
+  select(status, n, percent) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Grip Strength Classification (Threshold < 20)",
+    subtitle = paste("n =", nrow(sacro_grip), "participants with grip strength recorded")
+  ) %>%
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  ) %>%
+  cols_label(
+    status  = "Grip Strength Status",
+    n       = "Number of Participants",
+    percent = "Percentage (%)"
+  ) %>%
+  fmt_number(
+    columns = percent,
+    decimals = 1
+  ) %>%
+  # Bold column headers
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # Optional: subtle row highlighting for low grip
+  tab_style(
+    style = cell_fill(color = "#fff5f5"),
+    locations = cells_body(
+      columns = everything(),
+      rows = status == "Low grip strength (< 20)"
+    )
+  )
+
+```
+
+## Age Group Classification – Influenza Dataset
+
+We categorize participants into "Child" (< 18 years) and "Adult" (≥ 18 years) using the `age` variable.  
+
+Missing age values are explicitly labeled as "Missing Age" to make downstream analysis transparent and avoid silent dropping of records.
+
+```{r}
+influenza %>% 
+  mutate(age_group = case_when(age < 18 ~ "Child"
+                               , age >= 18 ~ "Adult",
+                               is.na(age) ~ "Missing Age")) %>%
+  select(age, age_group) %>%
+  count(age_group) %>%
+  mutate(
+    percent = round(n / sum(n) * 100, 1)
+  ) %>%
+  arrange(match(age_group, c("Child", "Adult", "Missing Age"))) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "Age Group Distribution"
+  ) %>%
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  ) %>%
+  cols_label(
+    age_group = "Age Group",
+    n         = "Count",
+    percent   = "Percentage (%)"
+  ) %>%
+  fmt_number(
+    columns = percent,
+    decimals = 1
+  ) %>%
+  # Bold headers
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # Subtle highlighting for visual distinction
+  tab_style(
+    style = cell_fill(color = "#f0f8ff"),
+    locations = cells_body(rows = age_group == "Child")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#fff5e6"),
+    locations = cells_body(rows = age_group == "Adult")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#f8f8f8"),
+    locations = cells_body(rows = age_group == "Missing Age")
+  )
+  
+```
+
+## BMI Calculation and Classification – Yaoundé COVID-19 Dataset
+
+We calculate **Body Mass Index (BMI)** using the standard formula:
+
+BMI = weight (kg) / [height (m)]²
+
+Height is converted from cm to meters, and BMI is rounded to 1 decimal place for readability.  
+
+Participants are then classified into standard WHO BMI categories:
+
+- Underweight: < 18.5
+
+- Normal weight: 18.5–24.9
+
+- Overweight: 25–29.9
+
+- Obese: ≥ 30
+
+(Missing or implausible height/weight values will result in NA BMI values.)
+
+```{r calculate-bmi-and-classify}
+yaounde_bmi <- yaounde_covid %>%
+  mutate(
+    height_m   = height_cm / 100,
+    bmi        = round(weight_kg / (height_m ^ 2), 1),
+    bmi_class  = case_when(
+      is.na(bmi)                          ~ "Missing / Invalid data",
+      bmi < 18.5                          ~ "Underweight",
+      bmi >= 18.5 & bmi < 25              ~ "Normal weight",
+      bmi >= 25   & bmi <= 29.9           ~ "Overweight",     # <= 29.9 to avoid overlap
+      bmi > 29.9                          ~ "Obese"    )
+  ) %>%
+  select(height_cm, weight_kg, height_m, bmi, bmi_class) 
+
+yaounde_bmi %>% 
+  count(bmi_class) %>%
+  mutate(
+    percent = round(n / sum(n) * 100, 1)
+  ) %>%
+  arrange(match(bmi_class, c("Underweight", "Normal weight", "Overweight", "Obese", "Missing / Invalid data"))) %>%
+  gt::gt() %>%
+  tab_header(
+    title = "BMI Category Distribution",
+  ) %>%
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14)
+  ) %>%
+  cols_label(
+    bmi_class = "BMI Category",
+    n         = "Number of Participants",
+    percent   = "Percentage (%)"
+  )
+```
+
+
+
+----
+Proverbs 11:28
